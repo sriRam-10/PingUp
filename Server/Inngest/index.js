@@ -28,7 +28,7 @@ export const syncUserCreation = inngest.createFunction(
         await user.createdAt(userData)
     }
 )
-//udation of data in the database
+//updation of data in the database
 
 export const syncUserUpdation = inngest.createFunction(
     {id : 'update-user-from-clerk'},
