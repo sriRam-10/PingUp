@@ -1,5 +1,8 @@
 import { Inngest } from "inngest";
 import User from "../Models/User.js";
+import Connection from "../Models/Connections.js";
+import { connections } from "mongoose";
+import sendEmail from "../Configs/nodeMailer.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "PingUp-app" });
@@ -59,12 +62,74 @@ export const syncUserDeletion = inngest.createFunction(
     }
 )
 
+// inngest function to remain the connection request is still pending
+
+const sendNewConnectionRquestRemainder = inngest.createFunction(
+    {id : 'send-new-connection-request-remainder'},
+    {event :'app/connection-request'},
+    async ({event, step}) => { 
+        const {connectionId} = event.data;
+
+        await step.run('send-connection-request-mail' , async () => {
+            const connection = await Connection.findById(connectionId).populate('from_user_id to_user_id');
+        const subject = `New Connection Request`
+        const body = `
+        <div style="font-family : Arial, sans-serif padding: 20px;">
+          <h2>Hi ${connection.to_user_id.full_name},</h2>
+         <p>you have new connection request from ${connection.from_user_id.full_name}
+                                              - ${connection.to_user_id.full_name} </p>
+    <p>Click <a href = "${proccess.env.FRONTEND_URL}/connections" style ="color:#10b981;">here<a/> to accept or reject the request</p>
+    </br>
+    <p>Thanks </br> PingUp-Stay connected</p>
+        </div>`;
+
+        await sendEmail({
+            to: connection.to_user_id.email,
+            subject,
+            body
+        })
+
+           })
+           const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 100)
+           await step.sleepUntil("wait-for-24-hours",in24Hours);
+           await step.run("send-connection-request-remainder" ,async (params) => {
+              const connection = await Connection.findById(connectionId).populate('from_user_id to_user_id');
+              if(connection.status === 'accepted'){
+                return {message : 'Already accepted'}
+              }
+
+       const subject = `New Connection Request`
+        const body = `
+        <div style="font-family : Arial, sans-serif padding: 20px;">
+          <h2>Hi ${connection.to_user_id.full_name},</h2>
+         <p>you have new connection request from ${connection.from_user_id.full_name}
+                                              - ${connection.to_user_id.full_name} </p>
+    <p>Click <a href = "${proccess.env.FRONTEND_URL}/connections" style ="color:#10b981;">here<a/> to accept or reject the request</p>
+    </br>
+    <p>Thanks </br> PingUp-Stay connected</p>
+        </div>`;
+
+        await sendEmail({
+            to: connection.to_user_id.email,
+            subject,
+            body
+        })
+
+        return {message:'Remainder sent'}
+
+           })
+    }
+)
+
 
 
 
     export const functions =[
         syncUserCreation,
         syncUserUpdation,
-        syncUserDeletion
+        syncUserDeletion,
+        sendNewConnectionRquestRemainder
     ];
 
+
+   
