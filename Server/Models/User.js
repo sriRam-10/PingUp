@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    _id: {type: String, required:true},
+   _id: {type: String, required:true},
     email: {type: String, required:true},
-    ful_name: {type: String, required:true},
+    full_name: {type: String, required:true},
     username: {type: String, required:true , unique:true},
     bio: {type: String, default:'Hello'},
     profile_picture: {type: String, default:''},
