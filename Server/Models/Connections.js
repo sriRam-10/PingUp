@@ -9,6 +9,6 @@ const connectionSchema = new mongoose.Schema([
     }
 ], {timestamps : true})
 
-const Connection = mongoose.model('connection',connectionSchema)
+const Connection = mongoose.model('Connection',connectionSchema)
 
 export default Connection

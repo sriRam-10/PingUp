@@ -121,14 +121,68 @@ const sendNewConnectionRquestRemainder = inngest.createFunction(
     }
 )
 
+//inngest function to delete the story after 24 hours 
+
+export const deleteStory = inngest.createFunction(
+    {id : 'story-delete'},
+    {event :'app/story.delete'},
+    async ({event,step}) => {
+   const {storyId} = event.data;
+   const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 100)
+
+   await step.sleepUntil('wait-for-24-hours', in24Hours);
+   await step.run("delete-stroy", async (params) => {
+       await story.findByIdAndDelete(storyId)
+       return {message :"story deleted."}
+   })
 
 
+    }
+)
+ const sendNotificationofUnseenMessages = inngest.createFunction(
+       {id : 'send-unseen-messages-notification'},
+       {cron :"TZ=America/New_York 0 9 * * *"}, //everyday at 9am
+
+       async ({step}) => {
+        const messages = await Message.find({seen : false}).populate('to_user_id')
+        const unseenCount =  {}
+        messages.map(message =>{
+            unseenCount[message.to_user_id._id] = (unseenCount[message.to_user_id._id] || 0) + 1
+        })
+
+        for (const userId in unseenCount){
+           const user = await User.findById(userId);
+
+           const subject = `You have ${unseenCount[userId]} unseen messages `;
+           const body = 
+            `<div style="font-family : Arial, sans-serif padding: 20px;">
+          <h2>Hi ${user.full_name},</h2>
+         <p>You have ${unseenCount[userId]} unseen messages </p>
+    <p>Click <a href = "${proccess.env.FRONTEND_URL}/connections" style ="color:#10b981;">here<a/>to view them</p>
+    </br>
+    <p>Thanks </br> PingUp-Stay connected</p>
+        </div>`;
+
+        await sendEmail({
+            to : user.email,
+            subject,
+            body
+        })
+        }
+     return {message : "Notification sent."}
+
+       }
+
+
+)
 
     export const functions =[
         syncUserCreation,
         syncUserUpdation,
         syncUserDeletion,
-        sendNewConnectionRquestRemainder
+        sendNewConnectionRquestRemainder,
+        deleteStory,
+        sendNotificationofUnseenMessages
     ];
 
 
