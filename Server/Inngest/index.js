@@ -30,7 +30,7 @@ export const inngest = new Inngest({ id: "PingUp-app" });
             profile_picture:image_url,
             username
         }
-        await user.createdAt(userData)
+        await user.create(userData)
     }
 )
 //updation of data in the database
