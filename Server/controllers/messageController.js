@@ -1,6 +1,6 @@
 import fs from 'fs';
 import imageKit from '../Configs/imageKit.js';
-import Message from '../Models/Message.js';
+import Message from '../models/Message.js';
 
 //create a empty object for the server side connections
 

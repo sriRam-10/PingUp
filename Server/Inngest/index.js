@@ -3,15 +3,17 @@ import User from "../Models/User.js";
 import Connection from "../Models/Connections.js";
 import { connections } from "mongoose";
 import sendEmail from "../Configs/nodeMailer.js";
+import  Message  from '../models/Message.js';
+import Story from "../Models/Story.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "PingUp-app" });
 
 // Create an empty array where we'll export future Inngest functions
-export const syncUserCreation = inngest.createFunction(
+ const syncUserCreation = inngest.createFunction(
     {id : 'sync-user-from-clerk'},
     {event :'clerk/user.created'},
-    async (event) => {
+    async ({event}) => {
         const {id,first_name,last_name,email_addresses,image_url} = event.data
         let username = email_addresses[0].email_address.split('@')[0]
 
@@ -23,8 +25,8 @@ export const syncUserCreation = inngest.createFunction(
 
         const userData = {
             _id : id,
-            full_name:first_name+ " "+last_name,
             email: email_addresses[0].email_address,
+            full_name:first_name+ " "+last_name,
             profile_picture:image_url,
             username
         }
@@ -33,17 +35,17 @@ export const syncUserCreation = inngest.createFunction(
 )
 //updation of data in the database
 
-export const syncUserUpdation = inngest.createFunction(
+ const syncUserUpdation = inngest.createFunction(
     {id : 'update-user-from-clerk'},
     {event :'clerk/user.updated'},
-    async (event) => {
+    async ({event}) => {
+       
         const {id,first_name,last_name,email_addresses,image_url} = event.data
   
         const updatedUserData = {
-
+           full_name:first_name+ " "+last_name,
            email: email_addresses[0].email_address, 
-            full_name:first_name+ " "+last_name,
-             profile_picture:image_url,
+           profile_picture:image_url,
            
         }
          await User.findByIdAndUpdate(id,updatedUserData)
@@ -52,10 +54,10 @@ export const syncUserUpdation = inngest.createFunction(
 
 // delete the user data from the database
 
-export const syncUserDeletion = inngest.createFunction(
+ const syncUserDeletion = inngest.createFunction(
     {id : 'delete-user-with-clerk'},
     {event :'clerk/user.deleted'},
-    async (event) => {
+    async ({event}) => {
         const {id} = event.data
      
         await User.findByIdAndDelete(id)
@@ -64,7 +66,7 @@ export const syncUserDeletion = inngest.createFunction(
 
 // inngest function to remain the connection request is still pending
 
-const sendNewConnectionRquestRemainder = inngest.createFunction(
+ const sendNewConnectionRequestRemainder = inngest.createFunction(
     {id : 'send-new-connection-request-remainder'},
     {event :'app/connection-request'},
     async ({event, step}) => { 
@@ -123,7 +125,7 @@ const sendNewConnectionRquestRemainder = inngest.createFunction(
 
 //inngest function to delete the story after 24 hours 
 
-export const deleteStory = inngest.createFunction(
+ const deleteStory = inngest.createFunction(
     {id : 'story-delete'},
     {event :'app/story.delete'},
     async ({event,step}) => {
@@ -131,8 +133,8 @@ export const deleteStory = inngest.createFunction(
    const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 100)
 
    await step.sleepUntil('wait-for-24-hours', in24Hours);
-   await step.run("delete-stroy", async (params) => {
-       await story.findByIdAndDelete(storyId)
+   await step.run("delete-stroy", async () => {
+       await Story.findByIdAndDelete(storyId)
        return {message :"story deleted."}
    })
 
@@ -180,7 +182,7 @@ export const deleteStory = inngest.createFunction(
         syncUserCreation,
         syncUserUpdation,
         syncUserDeletion,
-        sendNewConnectionRquestRemainder,
+        sendNewConnectionRequestRemainder,
         deleteStory,
         sendNotificationofUnseenMessages
     ];

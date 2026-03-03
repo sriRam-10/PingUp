@@ -8,7 +8,7 @@ import RecentMessages from '../Components/RecentMessages';
 const Feed = () => {
 
   const [feeds, setFeeds] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const fetchFeeds = async () => {
     setFeeds(dummyPostsData)
